@@ -5,6 +5,7 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"errors"
+	"io"
 	"io/ioutil"
 )
 
@@ -15,10 +16,10 @@ func New(authorizer Authorizer) *Client {
 	}
 }
 
-// ReadPrivateKey reads a pem file, decodes it and returns a rsa.PrivateKey
+// PrivateKey decodes a private key pem and returns a rsa.PrivateKey
 // for Xero HTTP request Authorization
-func ReadPrivateKey(path string) (*rsa.PrivateKey, error) {
-	b, err := ioutil.ReadFile(path)
+func PrivateKey(r io.Reader) (*rsa.PrivateKey, error) {
+	b, err := ioutil.ReadAll(r)
 	if err != nil {
 		return nil, err
 	}
