@@ -1,6 +1,6 @@
 package xero
 
-// Construct a new Xero API Client
+// New constructs a new Xero API Client
 func New() *Client {
 	return &Client{}
 }
