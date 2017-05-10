@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"log"
+	"os"
 
 	xero "github.com/thisissoon/go-xero"
 	oauth "github.com/thisissoon/go-xero/authorizers/go-oauth"
@@ -14,7 +15,11 @@ func main() {
 	token := flag.String("token", "", "Xero API Token")
 	flag.Parse()
 	// Read Private Key
-	pk, err := xero.ReadPrivateKey(*pemfile)
+	f, err := os.Open(*pemfile)
+	if err != nil {
+		log.Fatal(err)
+	}
+	pk, err := xero.PrivateKey(f)
 	if err != nil {
 		log.Fatal(err)
 	}
