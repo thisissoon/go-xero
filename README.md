@@ -47,7 +47,7 @@ func main() {
 - [x] Base API Request Client
 - [x] `go-oauth` Authorizer
 - [x] Simple `GET|POST|PUT` support
-- [ ] Base Test Suite / CI
+- [x] Base Test Suite / CI
 - [ ] PUT/POST Error Handling
 - [ ] Attchments
   - [ ] `GET`
