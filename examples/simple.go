@@ -1,0 +1,29 @@
+package main
+
+import (
+	"flag"
+	"log"
+
+	xero "github.com/thisissoon/go-xero"
+	oauth "github.com/thisissoon/go-xero/authorizers/go-oauth"
+)
+
+func main() {
+	// CLI Flags
+	pemfile := flag.String("pemfile", "", "Xero API PEM file location")
+	token := flag.String("token", "", "Xero API Token")
+	flag.Parse()
+	// Read Private Key
+	pk, err := xero.ReadPrivateKey(*pemfile)
+	if err != nil {
+		log.Fatal(err)
+	}
+	// Client
+	client := xero.New(oauth.New(*token, pk))
+	rsp, err := client.Get("https://api.xero.com/api.xro/2.0/Invoices")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer rsp.Body.Close()
+	log.Println(rsp.StatusCode)
+}

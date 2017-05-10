@@ -1,6 +1,7 @@
 package xero
 
 import (
+	"io"
 	"net/http"
 )
 
@@ -11,4 +12,31 @@ type Authorizer interface {
 	AuthorizeRequest(request *http.Request) error
 }
 
-type Client struct{}
+// A Client is a Xero API client. It provides methods for calling Xero API endpoints.
+// This type should be constructed with the New() method.
+type Client struct {
+	authorizer Authorizer
+	client     *http.Client
+}
+
+// do calls the Xero API
+func (c *Client) do(method, urlStr string, body io.Reader) (*http.Response, error) {
+	req, err := http.NewRequest(method, urlStr, body)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Accept", "application/xml")
+	if err := c.authorizer.AuthorizeRequest(req); err != nil {
+		return nil, err
+	}
+	client := c.client
+	if client == nil {
+		client = http.DefaultClient
+	}
+	return client.Do(req)
+}
+
+// Get sends a GET HTTP request for the given URL, no body is sent
+func (c *Client) Get(urlStr string) (*http.Response, error) {
+	return c.do(http.MethodGet, urlStr, nil)
+}
