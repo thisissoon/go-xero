@@ -1,0 +1,13 @@
+version: 2
+jobs:
+  build:
+    working_directory: /go/src/github.com/thisissoon/go-xero
+    docker:
+      - image: golang:1.8-alpine
+    steps:
+      - checkout
+      - run: apk update && apk add git
+      - run: go get github.com/garyburd/go-oauth/oauth
+      - run:
+          name: Run unit tests
+          command: go test -cover -v ./...
