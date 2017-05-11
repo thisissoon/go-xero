@@ -1,0 +1,28 @@
+version: 2
+jobs:
+  build:
+    working_directory: /go/src/github.com/thisissoon/go-xero
+    docker:
+      - image: golang:1.8-alpine
+    steps:
+      - checkout
+      - run: apk update && apk add git curl bash
+      - run: go get github.com/stretchr/testify/assert
+      - run: go get github.com/garyburd/go-oauth/oauth
+      - run:
+          name: Unit tests
+          command: |
+            set -e
+            echo "" > coverage.txt
+            for d in $(go list ./... | grep -v examples); do
+                go test -v -coverprofile=profile.out -covermode=atomic $d
+                if [ -f profile.out ]; then
+                    cat profile.out >> coverage.txt
+                    rm profile.out
+                fi
+            done
+      - run:
+          name: Codecov
+          command: |
+            export
+            curl -s https://codecov.io/bash | bash
