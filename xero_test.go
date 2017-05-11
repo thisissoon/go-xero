@@ -9,6 +9,7 @@ import (
 	"encoding/pem"
 	"errors"
 	"io"
+	"net/http"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -71,6 +72,37 @@ func TestPrivateKey(t *testing.T) {
 			pk, err := PrivateKey(tc.r)
 			assert.Equal(t, tc.expectedPrivateKey, pk)
 			assert.Equal(t, tc.expectedError, err)
+		})
+	}
+}
+
+type fakeAuthorizer struct {
+	err error
+}
+
+func (a fakeAuthorizer) AuthorizeRequest(*http.Request) error {
+	return a.err
+}
+
+func TestNew(t *testing.T) {
+	type testcase struct {
+		tname          string
+		authorizer     Authorizer
+		expectedClient *Client
+	}
+	tt := []testcase{
+		testcase{
+			"constructs new client",
+			fakeAuthorizer{},
+			&Client{
+				authorizer: fakeAuthorizer{},
+			},
+		},
+	}
+	for _, tc := range tt {
+		t.Run(tc.tname, func(t *testing.T) {
+			client := New(tc.authorizer)
+			assert.Equal(t, tc.expectedClient, client)
 		})
 	}
 }
