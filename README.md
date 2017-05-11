@@ -1,6 +1,7 @@
 # `go-xero`
 
-[![CircleCI](https://img.shields.io/circleci/project/github/thisissoon/go-xero.svg)]()
+[![CircleCI](https://img.shields.io/circleci/project/github/thisissoon/go-xero.svg)](https://circleci.com/gh/thisissoon/go-xero)
+[![Coverage](https://img.shields.io/codecov/c/github/thisissoon/go-xero.svg)](https://codecov.io/gh/thisissoon/go-xero)
 [![GoDoc](https://godoc.org/github.com/thisissoon/go-xero?status.svg)](https://godoc.org/github.com/thisissoon/go-xero)
 
 A `go` package for interfacing with the Xero accounting software HTTP API.
