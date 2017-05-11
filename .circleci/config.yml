@@ -6,7 +6,7 @@ jobs:
       - image: golang:1.8-alpine
     steps:
       - checkout
-      - run: apk update && apk add git curl
+      - run: apk update && apk add git curl bash
       - run: go get github.com/stretchr/testify/assert
       - run: go get github.com/garyburd/go-oauth/oauth
       - run:
@@ -21,3 +21,8 @@ jobs:
                     rm profile.out
                 fi
             done
+      - run:
+          name: Codecov
+          command: |
+            export
+            curl -s https://codecov.io/bash | bash
