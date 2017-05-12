@@ -83,3 +83,59 @@ func TestValidationStatus_UnmarshalXMLAttr(t *testing.T) {
 		})
 	}
 }
+
+func TestValidation(t *testing.T) {
+	raw := []byte(`<Response>
+		<Foos>
+			<Foo status="OK">
+				<Name>Foo</Name>
+			</Foo>
+			<Foo status="ERROR">
+				<Name>Bar</Name>
+				<ValidationErrors>
+					<ValidationError>
+						<Message>you forgot something</Message>
+					</ValidationError>
+				</ValidationErrors>
+			</Foo>
+		</Foos>
+	</Response>`)
+	body := struct {
+		XMLName xml.Name `xml:"Response"`
+		Foos    []struct {
+			Validation
+			Name string `xml:"Name"`
+		} `xml:"Foos>Foo"`
+	}{}
+	expected := struct {
+		XMLName xml.Name `xml:"Response"`
+		Foos    []struct {
+			Validation
+			Name string `xml:"Name"`
+		} `xml:"Foos>Foo"`
+	}{
+		XMLName: xml.Name{Local: "Response"},
+		Foos: []struct {
+			Validation
+			Name string `xml:"Name"`
+		}{
+			{
+				Validation: Validation{
+					Status: ValidationStatusOK,
+				},
+				Name: "Foo",
+			},
+			{
+				Validation: Validation{
+					Status: ValidationStatusError,
+					Errors: []ValidationError{
+						ValidationError{"you forgot something"},
+					},
+				},
+				Name: "Bar",
+			},
+		},
+	}
+	assert.NoError(t, xml.Unmarshal(raw, &body))
+	assert.Equal(t, expected, body)
+}
