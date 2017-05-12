@@ -3,6 +3,7 @@ package xero
 import (
 	"io"
 	"net/http"
+	"net/url"
 )
 
 // The Authorizer interface defines  common interface for authorising Xero HTTP
@@ -21,6 +22,17 @@ type Client struct {
 
 // do calls the Xero API
 func (c *Client) do(method, urlStr string, body io.Reader) (*http.Response, error) {
+	switch method {
+	case http.MethodPost, http.MethodPut:
+		u, err := url.Parse(urlStr)
+		if err != nil {
+			return nil, err
+		}
+		v := u.Query()
+		v.Set("SummarizeErrors", "false")
+		u.RawQuery = v.Encode()
+		urlStr = u.String()
+	}
 	req, err := http.NewRequest(method, urlStr, body)
 	if err != nil {
 		return nil, err

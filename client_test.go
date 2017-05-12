@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -17,6 +18,15 @@ func (t *testAuthorizer) AuthorizeRequest(req *http.Request) error {
 	return t.err
 }
 
+type tHTTPHandler struct {
+	t       *testing.T
+	handler func(*testing.T, http.ResponseWriter, *http.Request)
+}
+
+func (t *tHTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	t.handler(t.t, w, r)
+}
+
 func TestClient_do(t *testing.T) {
 	type testcase struct {
 		tname          string
@@ -24,11 +34,55 @@ func TestClient_do(t *testing.T) {
 		url            string
 		authorizer     Authorizer
 		client         *http.Client
-		ts             *httptest.Server
+		ts             func(t *testing.T) *httptest.Server
 		expectedStatus int
 		expectedError  error
 	}
 	tt := []testcase{
+		testcase{
+			tname:      "POST SummarizeErrors = false",
+			method:     http.MethodPost,
+			authorizer: &testAuthorizer{},
+			ts: func(t *testing.T) *httptest.Server {
+				handler := &tHTTPHandler{
+					t: t,
+					handler: func(t *testing.T, w http.ResponseWriter, r *http.Request) {
+						assert.Equal(t, http.MethodPost, r.Method)
+						assert.Equal(t, "false", r.URL.Query().Get("SummarizeErrors"))
+						w.WriteHeader(http.StatusOK)
+					},
+				}
+				return httptest.NewServer(handler)
+			},
+			expectedStatus: http.StatusOK,
+		},
+		testcase{
+			tname:      "PUT SummarizeErrors = false",
+			method:     http.MethodPut,
+			authorizer: &testAuthorizer{},
+			ts: func(t *testing.T) *httptest.Server {
+				handler := &tHTTPHandler{
+					t: t,
+					handler: func(t *testing.T, w http.ResponseWriter, r *http.Request) {
+						assert.Equal(t, http.MethodPut, r.Method)
+						assert.Equal(t, "false", r.URL.Query().Get("SummarizeErrors"))
+						w.WriteHeader(http.StatusOK)
+					},
+				}
+				return httptest.NewServer(handler)
+			},
+			expectedStatus: http.StatusOK,
+		},
+		testcase{
+			tname:  "SummarizeErrors bad url",
+			method: http.MethodPost,
+			url:    "://invalid",
+			expectedError: &url.Error{
+				Op:  "parse",
+				URL: "://invalid",
+				Err: errors.New("missing protocol scheme"),
+			},
+		},
 		testcase{
 			tname:         "new http request error",
 			method:        "bad method",
@@ -42,9 +96,11 @@ func TestClient_do(t *testing.T) {
 		testcase{
 			tname:      "ok",
 			authorizer: &testAuthorizer{},
-			ts: httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				w.WriteHeader(http.StatusOK)
-			})),
+			ts: func(*testing.T) *httptest.Server {
+				return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					w.WriteHeader(http.StatusOK)
+				}))
+			},
 			expectedStatus: http.StatusOK,
 		},
 	}
@@ -52,8 +108,9 @@ func TestClient_do(t *testing.T) {
 		t.Run(tc.tname, func(t *testing.T) {
 			url := tc.url
 			if tc.ts != nil {
-				url = tc.ts.URL
-				defer tc.ts.Close()
+				ts := tc.ts(t)
+				url = ts.URL
+				defer ts.Close()
 			}
 			client := &Client{
 				authorizer: tc.authorizer,
