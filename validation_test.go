@@ -103,30 +103,30 @@ func TestValidation(t *testing.T) {
 	body := struct {
 		XMLName xml.Name `xml:"Response"`
 		Foos    []struct {
-			Validation
+			ValidationErrors
 			Name string `xml:"Name"`
 		} `xml:"Foos>Foo"`
 	}{}
 	expected := struct {
 		XMLName xml.Name `xml:"Response"`
 		Foos    []struct {
-			Validation
+			ValidationErrors
 			Name string `xml:"Name"`
 		} `xml:"Foos>Foo"`
 	}{
 		XMLName: xml.Name{Local: "Response"},
 		Foos: []struct {
-			Validation
+			ValidationErrors
 			Name string `xml:"Name"`
 		}{
 			{
-				Validation: Validation{
+				ValidationErrors: ValidationErrors{
 					Status: ValidationStatusOK,
 				},
 				Name: "Foo",
 			},
 			{
-				Validation: Validation{
+				ValidationErrors: ValidationErrors{
 					Status: ValidationStatusError,
 					Errors: []ValidationError{
 						ValidationError{"you forgot something"},

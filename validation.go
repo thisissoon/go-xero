@@ -72,7 +72,7 @@ func (v *ValidationStatus) UnmarshalXMLAttr(attr xml.Attr) error {
 // validation type which can be checked against in the response
 // from Xero for each type posted/put to the API
 // See the validation.go example
-type Validation struct {
+type ValidationErrors struct {
 	Status ValidationStatus  `xml:"status,attr,omitempty"`
 	Errors []ValidationError `xml:"ValidationErrors>ValidationError,omitempty"`
 }
