@@ -3,3 +3,6 @@ test:
 
 coverage: test
 	go tool cover -html=coverage.out
+
+godoc:
+	godoc -http=:8000
