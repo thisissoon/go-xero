@@ -142,7 +142,7 @@ type Contact struct {
 	ContactID                 string          `xml:"ContactID,omitempty`
 	ContactNumber             string          `xml:"ContactNumber,omitempty`
 	AccountNumber             string          `xml:"AccountNumber,omitempty"`
-	ContactStatusa            string          `xml:"ContactStatus,omitempty"`
+	ContactStatus             string          `xml:"ContactStatus,omitempty"`
 	Name                      string          `xml:"Name,omitempty"`
 	FirstName                 string          `xml:"FirstName,omitempty"`
 	LastName                  string          `xml:"LastName,omitempty"`
