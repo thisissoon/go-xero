@@ -49,7 +49,7 @@ func main() {
 - [x] `go-oauth` Authorizer
 - [x] Simple `GET|POST|PUT` support
 - [x] Base Test Suite / CI
-- [ ] PUT/POST Error Handling
+- [x] PUT/POST Error Handling
 - [ ] Attchments
   - [ ] `GET`
   - [ ] `POST`
