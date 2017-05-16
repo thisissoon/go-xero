@@ -7,7 +7,7 @@ import (
 
 // Xero date time layouts
 const (
-	utcDateLayout = "2006-01-02T15:04:05.000"
+	utcDateLayout = "2006-01-02T15:04:05"
 )
 
 // The UTCDate type is used for storing Xero UTC date field values

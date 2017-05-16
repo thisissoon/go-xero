@@ -1,5 +1,14 @@
 package xero
 
+import (
+	"fmt"
+	"io"
+	"net/url"
+)
+
+// Contacts API Root
+const apiContactsRoot = "/Contacts"
+
 // The ContactTrackingCategory for SalesTrackingCategories and PurchasesTrackingCategories
 type ContactTrackingCategory struct {
 	TrackingCategoryName string `xml:"TrackingCategoryName,omitempty"`
@@ -173,6 +182,55 @@ type Contact struct {
 	Discount                    string                    `xml:"Discount,omitempty"`
 	Balances                    ContactBalances           `xml:"Balances,omitempty"`
 	HasAttachments              bool                      `xml:"HasAttachments,omitempty"`
+}
+
+// The ContactIterator type allows for recursive paginated calls
+// for n number of pages of contacts in 100 contact batches
+type ContactIterator struct {
+	page   int
+	client *Client
+}
+
+// url constructs the full url for call the Xero API for /Contacts
+func (c ContactIterator) url() string {
+	v := url.Values{}
+	v.Set("page", fmt.Sprintf("%d", c.page))
+	u := c.client.url(apiContactsRoot, v)
+	return u.String()
+}
+
+// Next calls the next page of the /Contacts endpoint returning the next
+// page of contacts. If no contacts are returned we have reache the end
+// and an io.EOF error is returned
+func (c ContactIterator) Next() (ContactIterator, []Contact, error) {
+	dst := struct {
+		Response
+		Contacts []Contact `xml:"Contacts>Contact"`
+	}{}
+	rsp, err := c.client.Get(c.url())
+	if err != nil {
+		return c, nil, err
+	}
+	decoder := NewDecoder(rsp.Body)
+	if err := decoder.Decode(&dst); err != nil {
+		return c, nil, err
+	}
+	defer rsp.Body.Close()
+	if len(dst.Contacts) == 0 {
+		return c, nil, io.EOF
+	}
+	c.page += 1
+	return c, dst.Contacts, nil
+}
+
+// The Contacts method returns a ContactIterator and first batch of Contacts
+// from the /Contacts endpoint. Call the iterator recursivly until the iterator
+// errors with an io.EOF or the length of contacts is 0
+func (c *Client) Contacts() (ContactIterator, []Contact, error) {
+	return ContactIterator{
+		page:   1,
+		client: c,
+	}.Next()
 }
 
 // The ContactGroup type holds data regarding a users contact group(s) within Xero.
