@@ -45,7 +45,11 @@ func (a *Authorizer) AuthorizeRequest(req *http.Request) error {
 		req.Header,
 		&client.Credentials,
 		req.Method,
-		req.URL,
+		&url.URL{
+			Scheme: req.URL.Scheme,
+			Host:   req.URL.Host,
+			Path:   req.URL.Path,
+		},
 		req.URL.Query())
 }
 
