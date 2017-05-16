@@ -13,6 +13,9 @@ import (
 func New(authorizer Authorizer) *Client {
 	return &Client{
 		authorizer: authorizer,
+		scheme:     "https",
+		host:       "api.xero.com",
+		root:       "/api.xro/2.0",
 	}
 }
 
