@@ -17,12 +17,6 @@ var (
 	ValidationStatusError = ValidationStatus{validationStatusError}
 )
 
-// The elementDecoder interface is used when handling decoding custom types
-// from xml strings to their actual types
-type elementDecoder interface {
-	DecodeElement(interface{}, *xml.StartElement) error
-}
-
 // The ValidationStatus type holds the validation status xml attribute, e.g:
 //   <Response>
 //       <Invoices>

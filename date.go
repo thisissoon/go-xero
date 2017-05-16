@@ -22,7 +22,7 @@ func (d UTCDate) MarshalXML(encoder *xml.Encoder, start xml.StartElement) error 
 }
 
 // unmarshalXML handles converting raw Xero UTC Date XML data into valid time
-func (d *UTCDate) unmarshalXML(decoder decoder, start xml.StartElement) error {
+func (d *UTCDate) unmarshalXML(decoder elementDecoder, start xml.StartElement) error {
 	var value string
 	if err := decoder.DecodeElement(&value, &start); err != nil {
 		return err
