@@ -9,8 +9,21 @@ import (
 	"time"
 )
 
-// Xero API 2.0 Root Path
-const apiRoot = "/api.xro/2.0"
+// Internal interface tyes implemented by the Client type
+type (
+	// The getter interface is implemented by the Client type and used internally
+	getter interface {
+		Get(string) (*http.Response, error)
+	}
+	// The poster interface is implemented by the Client type and used internally
+	poster interface {
+		Post(string, io.Reader) (*http.Response, error)
+	}
+	// The putter interface is implemented by the Client type and used internally
+	putter interface {
+		Put(string, io.Reader) (*http.Response, error)
+	}
+)
 
 // The Authorizer interface defines  common interface for authorising Xero HTTP
 // requests using oAuth. The AuthorizeRequest takes the HTTP request that requires
