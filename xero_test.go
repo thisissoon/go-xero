@@ -96,6 +96,9 @@ func TestNew(t *testing.T) {
 			fakeAuthorizer{},
 			&Client{
 				authorizer: fakeAuthorizer{},
+				scheme:     "https",
+				host:       "api.xero.com",
+				root:       "/api.xro/2.0",
 			},
 		},
 	}
