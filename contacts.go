@@ -211,11 +211,11 @@ func (c ContactIterator) Next() (ContactIterator, []Contact, error) {
 	if err != nil {
 		return c, nil, err
 	}
+	defer rsp.Body.Close()
 	decoder := NewDecoder(rsp.Body)
 	if err := decoder.Decode(&dst); err != nil {
 		return c, nil, err
 	}
-	defer rsp.Body.Close()
 	if len(dst.Contacts) == 0 {
 		return c, nil, io.EOF
 	}
