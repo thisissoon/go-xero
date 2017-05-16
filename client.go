@@ -1,10 +1,16 @@
 package xero
 
 import (
+	"encoding/xml"
 	"io"
 	"net/http"
 	"net/url"
+	"path"
+	"time"
 )
+
+// Xero API 2.0 Root Path
+const apiRoot = "/api.xro/2.0"
 
 // The Authorizer interface defines  common interface for authorising Xero HTTP
 // requests using oAuth. The AuthorizeRequest takes the HTTP request that requires
@@ -13,11 +19,40 @@ type Authorizer interface {
 	AuthorizeRequest(request *http.Request) error
 }
 
+// The Response type defines the XML response body wrapper
+//   <Response>
+//       <Id>...</Id>
+//       <Status>...</Status>
+//       <ProviderName>...</ProviderName
+//       <DateTimeUTC>...</DateTimeUTC>
+//       ...
+//   </Response>
+type Response struct {
+	XMLName      xml.Name  `xml:"Response"`
+	Id           string    `xml:"Id"`
+	Status       string    `xml:"Status"`
+	ProviderName string    `xml:"ProviderName"`
+	DateTimeUTC  time.Time `xml:"DateTimeUTC"`
+}
+
 // A Client is a Xero API client. It provides methods for calling Xero API endpoints.
 // This type should be constructed with the New() method.
 type Client struct {
 	authorizer Authorizer
 	client     *http.Client
+}
+
+// url constructs a valid Xero API url. The scheme, host and api root are
+// automatically appended to the url path
+func (c *Client) url(endpoint string, values url.Values) *url.URL {
+	scheme := "https"      // TODO: configurable
+	host := "api.xero.com" // TODO: configurable
+	return &url.URL{
+		Scheme:   scheme,
+		Host:     host,
+		Path:     path.Join(apiRoot, endpoint),
+		RawQuery: values.Encode(),
+	}
 }
 
 // do calls the Xero API
