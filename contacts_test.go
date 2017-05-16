@@ -1,6 +1,7 @@
 package xero
 
 import (
+	"net/url"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -31,7 +32,11 @@ func TestContactIterator_url(t *testing.T) {
 	}
 	for _, tc := range tt {
 		t.Run(tc.tname, func(t *testing.T) {
-			i := ContactIterator{tc.page, &Client{}}
+			i := ContactIterator{tc.page, &Client{}, &url.URL{
+				Scheme:  "https",
+				Host:    "api.xero.com",
+				RawPath: "/api.xero/2.0",
+			}}
 			assert.Equal(t, tc.expectedURL, i.url())
 		})
 	}

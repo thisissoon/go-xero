@@ -188,14 +188,16 @@ type Contact struct {
 // for n number of pages of contacts in 100 contact batches
 type ContactIterator struct {
 	page   int
-	client *Client
+	getter getter
+	root   *url.URL
 }
 
-// url constructs the full url for call the Xero API for /Contacts
+// url constructs a url from the root url appending query params
 func (c ContactIterator) url() string {
 	v := url.Values{}
 	v.Set("page", fmt.Sprintf("%d", c.page))
-	u := c.client.url(apiContactsRoot, v)
+	u := *c.root
+	u.RawQuery = v.Encode()
 	return u.String()
 }
 
@@ -207,7 +209,7 @@ func (c ContactIterator) Next() (ContactIterator, []Contact, error) {
 		Response
 		Contacts []Contact `xml:"Contacts>Contact"`
 	}{}
-	rsp, err := c.client.Get(c.url())
+	rsp, err := c.getter.Get(c.url())
 	if err != nil {
 		return c, nil, err
 	}
@@ -229,7 +231,8 @@ func (c ContactIterator) Next() (ContactIterator, []Contact, error) {
 func (c *Client) Contacts() (ContactIterator, []Contact, error) {
 	return ContactIterator{
 		page:   1,
-		client: c,
+		getter: c,
+		root:   c.url(apiContactsRoot), // htttps://api.xero.com/api.xro/2.0/Contacts
 	}.Next()
 }
 
