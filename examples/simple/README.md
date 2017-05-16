@@ -6,5 +6,5 @@ the most basic use of the package.
 ```
 $ go get github.com/thisissoon/go-xero
 $ go get github.com/thisissoon/go-xero/authorizers/go-oauth
-$ go run examples/simple.go -pemfile=/path/to/privatekey.pem -token=TOKEN
+$ go run examples/simple/main.go -pemfile=/path/to/privatekey.pem -token=TOKEN
 ```

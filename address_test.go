@@ -51,14 +51,14 @@ func TestAddressType_MarshalXML(t *testing.T) {
 func TestAddressType_unmarshalXML(t *testing.T) {
 	type testcase struct {
 		tname               string
-		decoder             func(t *testing.T) decoder
+		decoder             func(t *testing.T) elementDecoder
 		expectedAddressType AddressType
 		expectedErr         error
 	}
 	tt := []testcase{
 		testcase{
 			tname: "decoder error",
-			decoder: func(t *testing.T) decoder {
+			decoder: func(t *testing.T) elementDecoder {
 				return &testDecoder{t: t, fn: func(t *testing.T, v interface{}, s *xml.StartElement) error {
 					return errors.New("decoder error")
 				}}
@@ -67,7 +67,7 @@ func TestAddressType_unmarshalXML(t *testing.T) {
 		},
 		testcase{
 			tname: "invalid address type",
-			decoder: func(t *testing.T) decoder {
+			decoder: func(t *testing.T) elementDecoder {
 				return &testDecoder{t: t, fn: func(t *testing.T, v interface{}, s *xml.StartElement) error {
 					val := reflect.ValueOf(v).Elem()
 					val.SetString("foo")
@@ -78,7 +78,7 @@ func TestAddressType_unmarshalXML(t *testing.T) {
 		},
 		testcase{
 			tname: "POBOX",
-			decoder: func(t *testing.T) decoder {
+			decoder: func(t *testing.T) elementDecoder {
 				return &testDecoder{t: t, fn: func(t *testing.T, v interface{}, s *xml.StartElement) error {
 					val := reflect.ValueOf(v).Elem()
 					val.SetString(addressTypePOBox)
@@ -89,7 +89,7 @@ func TestAddressType_unmarshalXML(t *testing.T) {
 		},
 		testcase{
 			tname: "STREET",
-			decoder: func(t *testing.T) decoder {
+			decoder: func(t *testing.T) elementDecoder {
 				return &testDecoder{t: t, fn: func(t *testing.T, v interface{}, s *xml.StartElement) error {
 					val := reflect.ValueOf(v).Elem()
 					val.SetString(addressTypeStreet)
@@ -100,7 +100,7 @@ func TestAddressType_unmarshalXML(t *testing.T) {
 		},
 		testcase{
 			tname: "DELIVERY",
-			decoder: func(t *testing.T) decoder {
+			decoder: func(t *testing.T) elementDecoder {
 				return &testDecoder{t: t, fn: func(t *testing.T, v interface{}, s *xml.StartElement) error {
 					val := reflect.ValueOf(v).Elem()
 					val.SetString(addressTypeDelivery)
