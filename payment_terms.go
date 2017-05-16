@@ -39,7 +39,7 @@ func (pt *PaymentTerm) MarshalXML(encoder *xml.Encoder, start xml.StartElement) 
 }
 
 // unmarshalXML handles converting raw Xero Payment Term XML data into valid Payment Term
-func (pt *PaymentTerm) unmarshalXML(decoder decoder, start xml.StartElement) error {
+func (pt *PaymentTerm) unmarshalXML(decoder elementDecoder, start xml.StartElement) error {
 	var value string
 	if err := decoder.DecodeElement(&value, &start); err != nil {
 		return err

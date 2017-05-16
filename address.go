@@ -40,7 +40,7 @@ func (a *AddressType) MarshalXML(encoder *xml.Encoder, start xml.StartElement) e
 }
 
 // unmarshalXML handles converting raw Xero Payment Term XML data into valid Payment Term
-func (a *AddressType) unmarshalXML(decoder decoder, start xml.StartElement) error {
+func (a *AddressType) unmarshalXML(decoder elementDecoder, start xml.StartElement) error {
 	var value string
 	if err := decoder.DecodeElement(&value, &start); err != nil {
 		return err
