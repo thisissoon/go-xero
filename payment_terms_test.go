@@ -56,14 +56,14 @@ func TestPaymentTerm_MarshalXML(t *testing.T) {
 func TestPaymentTerm_unmarshalXML(t *testing.T) {
 	type testcase struct {
 		tname               string
-		decoder             func(t *testing.T) decoder
+		decoder             func(t *testing.T) elementDecoder
 		expectedPaymentTerm PaymentTerm
 		expectedErr         error
 	}
 	tt := []testcase{
 		testcase{
 			tname: "decoder error",
-			decoder: func(t *testing.T) decoder {
+			decoder: func(t *testing.T) elementDecoder {
 				return &testDecoder{t: t, fn: func(t *testing.T, v interface{}, s *xml.StartElement) error {
 					return errors.New("decoder error")
 				}}
@@ -72,7 +72,7 @@ func TestPaymentTerm_unmarshalXML(t *testing.T) {
 		},
 		testcase{
 			tname: "invalid payment term",
-			decoder: func(t *testing.T) decoder {
+			decoder: func(t *testing.T) elementDecoder {
 				return &testDecoder{t: t, fn: func(t *testing.T, v interface{}, s *xml.StartElement) error {
 					val := reflect.ValueOf(v).Elem()
 					val.SetString("foo")
@@ -83,7 +83,7 @@ func TestPaymentTerm_unmarshalXML(t *testing.T) {
 		},
 		testcase{
 			tname: "DAYSAFTERBILLDATE",
-			decoder: func(t *testing.T) decoder {
+			decoder: func(t *testing.T) elementDecoder {
 				return &testDecoder{t: t, fn: func(t *testing.T, v interface{}, s *xml.StartElement) error {
 					val := reflect.ValueOf(v).Elem()
 					val.SetString(paymentTermDaysAfterBillDate)
@@ -94,7 +94,7 @@ func TestPaymentTerm_unmarshalXML(t *testing.T) {
 		},
 		testcase{
 			tname: "DAYSAFTERBILLMONTH",
-			decoder: func(t *testing.T) decoder {
+			decoder: func(t *testing.T) elementDecoder {
 				return &testDecoder{t: t, fn: func(t *testing.T, v interface{}, s *xml.StartElement) error {
 					val := reflect.ValueOf(v).Elem()
 					val.SetString(paymentTermSaysAfterBillMonth)
@@ -105,7 +105,7 @@ func TestPaymentTerm_unmarshalXML(t *testing.T) {
 		},
 		testcase{
 			tname: "OFCURRENTMONTH",
-			decoder: func(t *testing.T) decoder {
+			decoder: func(t *testing.T) elementDecoder {
 				return &testDecoder{t: t, fn: func(t *testing.T, v interface{}, s *xml.StartElement) error {
 					val := reflect.ValueOf(v).Elem()
 					val.SetString(paymentTermOfCurrentMonth)
@@ -116,7 +116,7 @@ func TestPaymentTerm_unmarshalXML(t *testing.T) {
 		},
 		testcase{
 			tname: "OFFOLLOWINGMONTH",
-			decoder: func(t *testing.T) decoder {
+			decoder: func(t *testing.T) elementDecoder {
 				return &testDecoder{t: t, fn: func(t *testing.T, v interface{}, s *xml.StartElement) error {
 					val := reflect.ValueOf(v).Elem()
 					val.SetString(paymentTermOfFollowingMonth)

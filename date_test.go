@@ -43,14 +43,14 @@ func TestUTCDate_MarshalXML(t *testing.T) {
 func TestUTCDate_unmarshalXML(t *testing.T) {
 	type testcase struct {
 		tname           string
-		decoder         func(t *testing.T) decoder
+		decoder         func(t *testing.T) elementDecoder
 		expectedUTCDate UTCDate
 		expectedErr     error
 	}
 	tt := []testcase{
 		testcase{
 			tname: "decoder error",
-			decoder: func(t *testing.T) decoder {
+			decoder: func(t *testing.T) elementDecoder {
 				return &testDecoder{t: t, fn: func(t *testing.T, v interface{}, s *xml.StartElement) error {
 					return errors.New("decoder error")
 				}}
@@ -59,7 +59,7 @@ func TestUTCDate_unmarshalXML(t *testing.T) {
 		},
 		testcase{
 			tname: "time parse error",
-			decoder: func(t *testing.T) decoder {
+			decoder: func(t *testing.T) elementDecoder {
 				return &testDecoder{t: t, fn: func(t *testing.T, v interface{}, s *xml.StartElement) error {
 					v = "foo" // Invalid format
 					return nil
@@ -69,7 +69,7 @@ func TestUTCDate_unmarshalXML(t *testing.T) {
 		},
 		testcase{
 			tname: "ok",
-			decoder: func(t *testing.T) decoder {
+			decoder: func(t *testing.T) elementDecoder {
 				return &testDecoder{t: t, fn: func(t *testing.T, v interface{}, s *xml.StartElement) error {
 					val := reflect.ValueOf(v).Elem()
 					val.SetString("2009-05-14T01:44:26.747")
