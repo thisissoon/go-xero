@@ -40,18 +40,19 @@ type Response struct {
 type Client struct {
 	authorizer Authorizer
 	client     *http.Client
+
+	scheme string // Xero API Protocol Scheme (https)
+	host   string // Xero API Host (api.xero.com)
+	root   string // Xero API Root (/api.xro/2.0)
 }
 
 // url constructs a valid Xero API url. The scheme, host and api root are
 // automatically appended to the url path
-func (c *Client) url(endpoint string, values url.Values) *url.URL {
-	scheme := "https"      // TODO: configurable
-	host := "api.xero.com" // TODO: configurable
+func (c *Client) url(endpoint string) *url.URL {
 	return &url.URL{
-		Scheme:   scheme,
-		Host:     host,
-		Path:     path.Join(apiRoot, endpoint),
-		RawQuery: values.Encode(),
+		Scheme: c.scheme,
+		Host:   c.host,
+		Path:   path.Join(c.root, endpoint),
 	}
 }
 
