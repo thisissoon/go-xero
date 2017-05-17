@@ -116,18 +116,70 @@ func TestContactIterator_Next(t *testing.T) {
 	}
 	for _, tc := range tt {
 		t.Run(tc.tname, func(t *testing.T) {
-			ts, tsUrl := tc.ts(t)
-			defer ts.Close()
-			c := &Client{
-				authorizer: new(testAuthorizer),
-				scheme:     tsUrl.Scheme,
-				host:       tsUrl.Host,
-				root:       tsUrl.Path,
+			var u = new(url.URL)
+			if tc.ts != nil {
+				ts, tsUrl := tc.ts(t)
+				u = tsUrl
+				defer ts.Close()
 			}
-			i := ContactIterator{1, c, c.url("/")}
+			var c getter
+			if tc.getter != nil {
+				c = tc.getter
+			} else {
+				c = &Client{authorizer: new(testAuthorizer)}
+			}
+			i := ContactIterator{1, c, u}
 			_, contacts, err := i.Next()
 			assert.Equal(t, tc.expectedErr, err)
 			assert.Equal(t, tc.expectedContacts, contacts)
 		})
 	}
+}
+
+func TestContacts(t *testing.T) {
+	reqCount := 0
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		reqCount += 1
+		w.WriteHeader(http.StatusOK)
+		switch reqCount {
+		case 1:
+			w.Write([]byte(`<Response>
+				<Contacts>
+					<Contact>
+						<Name>Foo</Name>
+					</Contact>
+				</Contacts>
+			</Response>`))
+
+		case 2:
+			w.Write([]byte(`<Response>
+				<Contacts>
+					<Contact>
+						<Name>Bar</Name>
+					</Contact>
+				</Contacts>
+			</Response>`))
+		default:
+			w.Write([]byte(`<Response><Contacts></Contacts></Response>`))
+		}
+	}))
+	u, err := url.Parse(ts.URL)
+	assert.NoError(t, err)
+	c := &Client{
+		authorizer: new(testAuthorizer),
+		scheme:     u.Scheme,
+		host:       u.Host,
+		root:       u.Path,
+	}
+	x := 1
+	receivedContacts := make(map[int][]Contact)
+	for i, contacts, err := c.Contacts(); err != io.EOF; i, contacts, err = i.Next() {
+		receivedContacts[x] = contacts
+		x += 1
+	}
+	assert.Equal(t, 3, x)
+	assert.Equal(t, map[int][]Contact{
+		1: []Contact{{Name: "Foo"}},
+		2: []Contact{{Name: "Bar"}},
+	}, receivedContacts)
 }
