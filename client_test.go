@@ -10,6 +10,12 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+type testGetter func(string) (*http.Response, error)
+
+func (fn testGetter) Get(urlStr string) (*http.Response, error) {
+	return fn(urlStr)
+}
+
 type testAuthorizer struct {
 	err error
 }

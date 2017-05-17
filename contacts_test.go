@@ -2,6 +2,7 @@ package xero
 
 import (
 	"encoding/xml"
+	"errors"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -49,11 +50,19 @@ func TestContactIterator_url(t *testing.T) {
 func TestContactIterator_Next(t *testing.T) {
 	type testcase struct {
 		tname            string
+		getter           testGetter
 		ts               func(t *testing.T) (*httptest.Server, *url.URL)
 		expectedContacts []Contact
 		expectedErr      error
 	}
 	tt := []testcase{
+		testcase{
+			tname: "request error",
+			getter: testGetter(func(string) (*http.Response, error) {
+				return nil, errors.New("request error")
+			}),
+			expectedErr: errors.New("request error"),
+		},
 		testcase{
 			tname: "bad xml",
 			ts: func(t *testing.T) (*httptest.Server, *url.URL) {
