@@ -184,6 +184,11 @@ type Contact struct {
 	HasAttachments              bool                      `xml:"HasAttachments,omitempty"`
 }
 
+type ContactsResponse struct {
+	Response
+	Contacts []Contact `xml:"Contacts>Contact"`
+}
+
 // The ContactIterator type allows for recursive paginated calls
 // for n number of pages of contacts in 100 contact batches
 type ContactIterator struct {
@@ -205,17 +210,8 @@ func (c ContactIterator) url() string {
 // page of contacts. If no contacts are returned we have reache the end
 // and an io.EOF error is returned
 func (c ContactIterator) Next() (ContactIterator, []Contact, error) {
-	dst := struct {
-		Response
-		Contacts []Contact `xml:"Contacts>Contact"`
-	}{}
-	rsp, err := c.getter.Get(c.url())
-	if err != nil {
-		return c, nil, err
-	}
-	defer rsp.Body.Close()
-	decoder := NewDecoder(rsp.Body)
-	if err := decoder.Decode(&dst); err != nil {
+	var dst ContactsResponse
+	if err := c.getter.get(c.url(), &dst); err != nil {
 		return c, nil, err
 	}
 	if len(dst.Contacts) == 0 {

@@ -13,15 +13,15 @@ import (
 type (
 	// The getter interface is implemented by the Client type and used internally
 	getter interface {
-		Get(string) (*http.Response, error)
+		get(string, interface{}) error
 	}
 	// The poster interface is implemented by the Client type and used internally
 	poster interface {
-		Post(string, io.Reader) (*http.Response, error)
+		post(string, io.Reader, interface{}) error
 	}
 	// The putter interface is implemented by the Client type and used internally
 	putter interface {
-		Put(string, io.Reader) (*http.Response, error)
+		put(string, io.Reader, interface{}) error
 	}
 )
 
@@ -97,14 +97,47 @@ func (c *Client) do(method, urlStr string, body io.Reader) (*http.Response, erro
 	return client.Do(req)
 }
 
+// doDecode performs a HTTP request to the Xero API and automatically decodes
+// the response into a destination interface
+func (c *Client) doDecode(method, urlStr string, body io.Reader, dst interface{}) error {
+	rsp, err := c.do(method, urlStr, body)
+	if err != nil {
+		return err
+	}
+	defer rsp.Body.Close()
+	decoder := NewDecoder(rsp.Body)
+	if err := decoder.Decode(dst); err != nil {
+		return err
+	}
+	return nil
+}
+
+// get performs a HTTP GET request to the Xero API and decodes the response
+// into a destination interface
+func (c *Client) get(urlStr string, dst interface{}) error {
+	return c.doDecode(http.MethodGet, urlStr, nil, dst)
+}
+
 // Get sends a HTTP GET request for the given URL, no body is sent
 func (c *Client) Get(urlStr string) (*http.Response, error) {
 	return c.do(http.MethodGet, urlStr, nil)
 }
 
+// post performs a HTTP POST request to the Xero API and decodes the response
+// into a destination interface
+func (c *Client) post(urlStr string, body io.Reader, dst interface{}) error {
+	return c.doDecode(http.MethodPost, urlStr, body, dst)
+}
+
 // Post sends a HTTP POST request for the given url and request body
 func (c *Client) Post(urlStr string, body io.Reader) (*http.Response, error) {
 	return c.do(http.MethodPost, urlStr, body)
+}
+
+// put performs a HTTP PUT request to the Xero API and decodes the response
+// into a destination interface
+func (c *Client) put(urlStr string, body io.Reader, dst interface{}) error {
+	return c.doDecode(http.MethodPut, urlStr, body, dst)
 }
 
 // Post sends a HTTP PUT request for the given url and request body
