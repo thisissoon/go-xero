@@ -1,6 +1,8 @@
 package xero
 
 import (
+	"encoding/xml"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -52,6 +54,37 @@ func TestContactIterator_Next(t *testing.T) {
 		expectedErr      error
 	}
 	tt := []testcase{
+		testcase{
+			tname: "bad xml",
+			ts: func(t *testing.T) (*httptest.Server, *url.URL) {
+				ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					w.WriteHeader(http.StatusOK)
+					w.Write([]byte(`</uwot>`))
+				}))
+				u, err := url.Parse(ts.URL)
+				assert.NoError(t, err)
+				return ts, u
+			},
+			expectedErr: &xml.SyntaxError{
+				Msg:  "unexpected end element </uwot>",
+				Line: 1,
+			},
+		},
+		testcase{
+			tname: "no contacts EOF",
+			ts: func(t *testing.T) (*httptest.Server, *url.URL) {
+				ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					w.WriteHeader(http.StatusOK)
+					w.Write([]byte(`<Response>
+						<Contacts></Contacts>
+					</Response>`))
+				}))
+				u, err := url.Parse(ts.URL)
+				assert.NoError(t, err)
+				return ts, u
+			},
+			expectedErr: io.EOF,
+		},
 		testcase{
 			tname: "returns contacts",
 			ts: func(t *testing.T) (*httptest.Server, *url.URL) {
