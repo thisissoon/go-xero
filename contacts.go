@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"net/url"
+	"path"
 )
 
 // Contacts API Root
@@ -219,6 +220,23 @@ func (c ContactIterator) Next() (ContactIterator, []Contact, error) {
 	}
 	c.page += 1
 	return c, dst.Contacts, nil
+}
+
+// Contact returns a specific singular contact from the Xero API
+// Identifier can be the Xero identifier for a contact e.g. 297c2dc5-cc47-4afd-8ec8-74990b8761e9
+// or a custom identifier specified from another system e.g. a CRM system has a contact number of CUST100
+func (c *Client) Contact(identifier string) (Contact, error) {
+	var dst ContactsResponse
+	var contact Contact
+	urlStr := c.url(path.Join(apiContactsRoot, identifier)).String()
+	if err := c.get(urlStr, &dst); err != nil {
+		return contact, err
+	}
+	if len(dst.Contacts) == 0 {
+		return contact, fmt.Errorf("contact %s not found", identifier)
+	}
+	contact = dst.Contacts[0]
+	return contact, nil
 }
 
 // The Contacts method returns a ContactIterator and first batch of Contacts
