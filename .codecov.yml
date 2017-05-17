@@ -1,0 +1,5 @@
+coverage:
+  status:
+    project:
+      default:
+        target: 90%  # we always want at least 90% coverage here
