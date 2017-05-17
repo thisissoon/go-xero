@@ -58,8 +58,8 @@ func TestContactIterator_Next(t *testing.T) {
 	tt := []testcase{
 		testcase{
 			tname: "request error",
-			getter: testGetter(func(string) (*http.Response, error) {
-				return nil, errors.New("request error")
+			getter: testGetter(func(string, interface{}) error {
+				return errors.New("request error")
 			}),
 			expectedErr: errors.New("request error"),
 		},
