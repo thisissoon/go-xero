@@ -136,7 +136,7 @@ func TestContactIterator_Next(t *testing.T) {
 	}
 }
 
-func TestContacts(t *testing.T) {
+func TestClientContacts(t *testing.T) {
 	reqCount := 0
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		reqCount += 1
@@ -182,4 +182,20 @@ func TestContacts(t *testing.T) {
 		1: []Contact{{Name: "Foo"}},
 		2: []Contact{{Name: "Bar"}},
 	}, receivedContacts)
+}
+
+func TestClientContact(t *testing.T) {
+	type testcase struct {
+		tname string
+	}
+	tt := []testcase{
+		testcase{
+			tname: "",
+		},
+	}
+	for _, tc := range tt {
+		t.Run(tc.tname, func(t *testing.T) {
+
+		})
+	}
 }

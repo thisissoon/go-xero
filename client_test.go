@@ -1,7 +1,11 @@
 package xero
 
 import (
+	"bytes"
+	"encoding/xml"
 	"errors"
+	"io"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -9,6 +13,12 @@ import (
 
 	"github.com/stretchr/testify/assert"
 )
+
+type testRoundTrip func(*http.Request) (*http.Response, error)
+
+func (fn testRoundTrip) RoundTrip(r *http.Request) (*http.Response, error) {
+	return fn(r)
+}
 
 type testGetter func(string, interface{}) error
 
@@ -127,6 +137,68 @@ func TestClient_do(t *testing.T) {
 			if rsp != nil {
 				assert.Equal(t, tc.expectedStatus, rsp.StatusCode)
 			}
+		})
+	}
+}
+
+func TestClient_doDecode(t *testing.T) {
+	type testcase struct {
+		tname         string
+		client        *http.Client
+		method        string
+		urlStr        string
+		body          io.Reader
+		dst           interface{}
+		expectedError error
+		expectedDst   interface{}
+	}
+	tt := []testcase{
+		testcase{
+			tname: "request error",
+			client: &http.Client{
+				Transport: testRoundTrip(func(*http.Request) (*http.Response, error) {
+					return nil, errors.New("request error")
+				}),
+			},
+			expectedError: &url.Error{Op: "Get", URL: "", Err: errors.New("request error")},
+		},
+		testcase{
+			tname: "invalid xml",
+			dst:   Response{},
+			client: &http.Client{
+				Transport: testRoundTrip(func(*http.Request) (*http.Response, error) {
+					r := bytes.NewBuffer([]byte("</uwotm8>"))
+					return &http.Response{
+						Body: ioutil.NopCloser(r),
+					}, nil
+				}),
+			},
+			expectedError: &xml.SyntaxError{Msg: "unexpected end element </uwotm8>", Line: 1},
+		},
+		testcase{
+			tname: "ok",
+			dst: struct {
+				Response
+				Contact
+			}{},
+			client: &http.Client{
+				Transport: testRoundTrip(func(*http.Request) (*http.Response, error) {
+					r := bytes.NewBuffer([]byte(`<Response><Contact><Name>Foo</Name></Contact></Response>`))
+					return &http.Response{
+						Body: ioutil.NopCloser(r),
+					}, nil
+				}),
+			},
+			expectedError: nil,
+			expectedDst:   Contact{Name: "Foo"},
+		},
+	}
+	for _, tc := range tt {
+		t.Run(tc.tname, func(t *testing.T) {
+			client := &Client{authorizer: new(testAuthorizer), client: tc.client}
+			err := client.doDecode(tc.method, tc.urlStr, tc.body, &tc.dst)
+			assert.Equal(t, tc.expectedError, err)
+			assert.Equal(t, tc.expectedDst, tc.dst)
 		})
 	}
 }
