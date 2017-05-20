@@ -148,7 +148,7 @@ func TestClient_doDecode(t *testing.T) {
 		method        string
 		urlStr        string
 		body          io.Reader
-		dst           interface{}
+		dst           Response
 		expectedError error
 		expectedDst   interface{}
 	}
@@ -161,6 +161,7 @@ func TestClient_doDecode(t *testing.T) {
 				}),
 			},
 			expectedError: &url.Error{Op: "Get", URL: "", Err: errors.New("request error")},
+			expectedDst:   Response{},
 		},
 		testcase{
 			tname: "invalid xml",
@@ -174,23 +175,21 @@ func TestClient_doDecode(t *testing.T) {
 				}),
 			},
 			expectedError: &xml.SyntaxError{Msg: "unexpected end element </uwotm8>", Line: 1},
+			expectedDst:   Response{},
 		},
 		testcase{
 			tname: "ok",
-			dst: struct {
-				Response
-				Contact
-			}{},
+			dst:   Response{},
 			client: &http.Client{
 				Transport: testRoundTrip(func(*http.Request) (*http.Response, error) {
-					r := bytes.NewBuffer([]byte(`<Response><Contact><Name>Foo</Name></Contact></Response>`))
+					r := bytes.NewBuffer([]byte(`<Response><ProviderName>Foo</ProviderName></Response>`))
 					return &http.Response{
 						Body: ioutil.NopCloser(r),
 					}, nil
 				}),
 			},
 			expectedError: nil,
-			expectedDst:   Contact{Name: "Foo"},
+			expectedDst:   Response{XMLName: xml.Name{Local: "Response"}, ProviderName: "Foo"},
 		},
 	}
 	for _, tc := range tt {
