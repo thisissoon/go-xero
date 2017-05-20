@@ -3,6 +3,7 @@ package xero
 import (
 	"encoding/xml"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -136,7 +137,7 @@ func TestContactIterator_Next(t *testing.T) {
 	}
 }
 
-func TestClientContacts(t *testing.T) {
+func TestClient_Contacts(t *testing.T) {
 	reqCount := 0
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		reqCount += 1
@@ -184,18 +185,73 @@ func TestClientContacts(t *testing.T) {
 	}, receivedContacts)
 }
 
-func TestClientContact(t *testing.T) {
+func TestClient_Contact(t *testing.T) {
 	type testcase struct {
-		tname string
+		tname           string
+		ts              func(t *testing.T) (*httptest.Server, *url.URL)
+		expectedContact Contact
+		expectedErr     error
 	}
 	tt := []testcase{
 		testcase{
-			tname: "",
+			tname: "bad xml",
+			ts: func(t *testing.T) (*httptest.Server, *url.URL) {
+				ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					w.WriteHeader(http.StatusOK)
+					w.Write([]byte(`</uwotm8>`))
+				}))
+				u, err := url.Parse(ts.URL)
+				assert.NoError(t, err)
+				return ts, u
+			},
+			expectedErr: &xml.SyntaxError{Msg: "unexpected end element </uwotm8>", Line: 1},
+		},
+		testcase{
+			tname: "0 contacts",
+			ts: func(t *testing.T) (*httptest.Server, *url.URL) {
+				ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					w.WriteHeader(http.StatusOK)
+					w.Write([]byte(`<Response><Contacts></Contacts></Response>`))
+				}))
+				u, err := url.Parse(ts.URL)
+				assert.NoError(t, err)
+				return ts, u
+			},
+			expectedErr: fmt.Errorf("contact %s not found", "foo"),
+		},
+		testcase{
+			tname: "contact returned",
+			ts: func(t *testing.T) (*httptest.Server, *url.URL) {
+				ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					w.WriteHeader(http.StatusOK)
+					w.Write([]byte(`<Response>
+						<Contacts>
+							<Contact>
+								<Name>Dwack</Name>
+							</Contact>
+						</Contacts>
+					</Response>`))
+				}))
+				u, err := url.Parse(ts.URL)
+				assert.NoError(t, err)
+				return ts, u
+			},
+			expectedContact: Contact{Name: "Dwack"},
 		},
 	}
 	for _, tc := range tt {
 		t.Run(tc.tname, func(t *testing.T) {
-
+			ts, u := tc.ts(t)
+			defer ts.Close()
+			c := &Client{
+				authorizer: new(testAuthorizer),
+				scheme:     u.Scheme,
+				host:       u.Host,
+				root:       u.Path,
+			}
+			contact, err := c.Contact("foo")
+			assert.Equal(t, tc.expectedContact, contact)
+			assert.Equal(t, tc.expectedErr, err)
 		})
 	}
 }
