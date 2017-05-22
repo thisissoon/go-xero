@@ -1,6 +1,7 @@
 package xero
 
 import (
+	"bytes"
 	"encoding/xml"
 	"io"
 	"net/http"
@@ -121,10 +122,47 @@ func (c *Client) doDecode(method, urlStr string, body io.Reader, dst interface{}
 	return nil
 }
 
+// doEncode encodes the encoder into a http body and makes the request to the API
+// the response body is not processed and is automatically closed
+func (c *Client) doEncode(method, urlStr string, enc Encoder) error {
+	var body = new(bytes.Buffer)
+	if err := enc.Encode(body); err != nil {
+		return err
+	}
+	rsp, err := c.do(method, urlStr, body)
+	if err != nil {
+		return err
+	}
+	defer rsp.Body.Close()
+	return nil
+}
+
+// doEncodeDecode encodes the encoder into a http body and makes the request to the API and
+// returns the responses of doDecode
+func (c *Client) doEncodeDecode(method, urlStr string, enc Encoder, dst interface{}) error {
+	var body = new(bytes.Buffer)
+	if err := enc.Encode(body); err != nil {
+		return err
+	}
+	return c.doDecode(method, urlStr, body, dst)
+}
+
 // get performs a HTTP GET request to the Xero API and decodes the response
 // into a destination interface
 func (c *Client) get(urlStr string, dst interface{}) error {
 	return c.doDecode(http.MethodGet, urlStr, nil, dst)
+}
+
+// post performs a HTTP POST request to the Xero API and decodes the response
+// into a destination interface
+func (c *Client) post(urlStr string, enc Encoder, dst interface{}) error {
+	return c.doEncodeDecode(http.MethodPost, urlStr, enc, dst)
+}
+
+// put performs a HTTP PUT request to the Xero API and decodes the response
+// into a destination interface
+func (c *Client) put(urlStr string, enc Encoder, dst interface{}) error {
+	return c.doEncodeDecode(http.MethodPut, urlStr, enc, dst)
 }
 
 // Get sends a HTTP GET request for the given URL, no body is sent
@@ -132,24 +170,26 @@ func (c *Client) Get(urlStr string) (*http.Response, error) {
 	return c.do(http.MethodGet, urlStr, nil)
 }
 
-// post performs a HTTP POST request to the Xero API and decodes the response
-// into a destination interface
-func (c *Client) post(urlStr string, body io.Reader, dst interface{}) error {
-	return c.doDecode(http.MethodPost, urlStr, body, dst)
-}
-
-// Post sends a HTTP POST request for the given url and request body
+// Post sends a HTTP POST request for the given url and request body and
+// returns the raw HTTP response
 func (c *Client) Post(urlStr string, body io.Reader) (*http.Response, error) {
 	return c.do(http.MethodPost, urlStr, body)
 }
 
-// put performs a HTTP PUT request to the Xero API and decodes the response
-// into a destination interface
-func (c *Client) put(urlStr string, body io.Reader, dst interface{}) error {
-	return c.doDecode(http.MethodPut, urlStr, body, dst)
-}
-
-// Post sends a HTTP PUT request for the given url and request body
+// Post sends a HTTP PUT request for the given url and request body returning
+// the raw HTTP response
 func (c *Client) Put(urlStr string, body io.Reader) (*http.Response, error) {
 	return c.do(http.MethodPut, urlStr, body)
+}
+
+// Use Create to send PUT requests to the xero API, encoding the request data
+// into XML and decoding the response XML into the destination interface
+func (c *Client) Create(ep Endpoint, enc Encoder, dst interface{}) error {
+	return c.put(c.url(ep).String(), enc, dst)
+}
+
+// Use CreateUpdate to send POST requests to the xero API, encoding the request data
+// into XML and decoding the response XML into the destination interface
+func (c *Client) CreateUpdate(ep Endpoint, enc Encoder, dst interface{}) error {
+	return c.post(c.url(ep).String(), enc, dst)
 }
