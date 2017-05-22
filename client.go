@@ -25,6 +25,14 @@ type (
 	}
 )
 
+// The Endpoint type defines official Xero API endpoints
+type Endpoint string
+
+// String implements the Stringer interface
+func (e Endpoint) String() string {
+	return string(e)
+}
+
 // The Authorizer interface defines  common interface for authorising Xero HTTP
 // requests using oAuth. The AuthorizeRequest takes the HTTP request that requires
 // authorization.
@@ -61,11 +69,12 @@ type Client struct {
 
 // url constructs a valid Xero API url. The scheme, host and api root are
 // automatically appended to the url path
-func (c *Client) url(endpoint string) *url.URL {
+func (c *Client) url(endpoint Endpoint, extra ...string) *url.URL {
+	parts := append([]string{endpoint.String()}, extra...)
 	return &url.URL{
 		Scheme: c.scheme,
 		Host:   c.host,
-		Path:   path.Join(c.root, endpoint),
+		Path:   path.Join(parts...),
 	}
 }
 
