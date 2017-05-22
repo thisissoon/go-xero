@@ -207,6 +207,8 @@ func TestClient_doEncode(t *testing.T) {
 		name          string
 		enc           func(t *testing.T) Encoder
 		client        *http.Client
+		rw            io.ReadWriter
+		expectedData  []byte
 		expectedError error
 	}
 	tt := []testcase{
@@ -219,12 +221,30 @@ func TestClient_doEncode(t *testing.T) {
 			},
 			expectedError: errors.New("encoding error"),
 		},
+		testcase{
+			name: "encode error",
+			enc: func(t *testing.T) Encoder {
+				return &testEncoder{t, func(t *testing.T, w io.Writer) error {
+					return nil
+				}}
+			},
+			client: &http.Client{
+				Transport: testRoundTrip(func(*http.Request) (*http.Response, error) {
+					return nil, errors.New("request error")
+				}),
+			},
+			expectedError: &url.Error{
+				Op:  "Post",
+				URL: "/?SummarizeErrors=false",
+				Err: errors.New("request error"),
+			},
+		},
 	}
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
 			client := &Client{authorizer: new(testAuthorizer), client: tc.client}
-			err := client.doEncode(http.MethodPost, "", tc.enc(t))
-			assert.Equal(t, tc.expectedError, err)
+			err := client.doEncode(http.MethodPost, "/", tc.enc(t))
+			assert.Equal(t, tc.expectedError, err, "%s", err)
 		})
 	}
 }
