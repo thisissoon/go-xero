@@ -201,3 +201,30 @@ func TestClient_doDecode(t *testing.T) {
 		})
 	}
 }
+
+func TestClient_doEncode(t *testing.T) {
+	type testcase struct {
+		name          string
+		enc           func(t *testing.T) Encoder
+		client        *http.Client
+		expectedError error
+	}
+	tt := []testcase{
+		testcase{
+			name: "encode error",
+			enc: func(t *testing.T) Encoder {
+				return &testEncoder{t, func(t *testing.T, w io.Writer) error {
+					return errors.New("encoding error")
+				}}
+			},
+			expectedError: errors.New("encoding error"),
+		},
+	}
+	for _, tc := range tt {
+		t.Run(tc.name, func(t *testing.T) {
+			client := &Client{authorizer: new(testAuthorizer), client: tc.client}
+			err := client.doEncode(http.MethodPost, "", tc.enc(t))
+			assert.Equal(t, tc.expectedError, err)
+		})
+	}
+}
