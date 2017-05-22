@@ -54,7 +54,7 @@ func main() {
   - [ ] `GET`
   - [ ] `POST`
   - [ ] `PUT`
-- [ ] Accounts
+- [ ] Accounts (@jamesjwarren)
   - [ ] `GET`
   - [ ] `POST`
   - [ ] `PUT`
@@ -63,14 +63,14 @@ func main() {
   - [ ] `GET`
   - [ ] `POST`
   - [ ] `PUT`
-- [ ] Bank Transfers
+- [ ] Bank Transfer
   - [ ] `GET`
   - [ ] `POST`
   - [ ] `PUT`
 - [ ] Branding Themes
   - [ ] `GET`
-- [ ] Contacts
-  - [ ] `GET`
+- [ ] Contacts (@krak3n)
+  - [x] `GET`
   - [ ] `POST`
   - [ ] `PUT`
 - [ ] Contact Groups
