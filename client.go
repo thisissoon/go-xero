@@ -114,7 +114,7 @@ func (c *Client) doDecode(method, urlStr string, body io.Reader, dst interface{}
 		return err
 	}
 	defer rsp.Body.Close()
-	decoder := NewDecoder(rsp.Body)
+	decoder := xml.NewDecoder(rsp.Body)
 	if err := decoder.Decode(dst); err != nil {
 		return err
 	}
