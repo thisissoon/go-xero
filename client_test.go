@@ -201,3 +201,62 @@ func TestClient_doDecode(t *testing.T) {
 		})
 	}
 }
+
+func TestClient_doEncode(t *testing.T) {
+	type testcase struct {
+		name          string
+		enc           func(t *testing.T) Encoder
+		client        *http.Client
+		expectedError error
+	}
+	tt := []testcase{
+		testcase{
+			name: "encode error",
+			enc: func(t *testing.T) Encoder {
+				return &testEncoder{t, func(t *testing.T, w io.Writer) error {
+					return errors.New("encoding error")
+				}}
+			},
+			expectedError: errors.New("encoding error"),
+		},
+		testcase{
+			name: "encode error",
+			enc: func(t *testing.T) Encoder {
+				return &testEncoder{t, func(t *testing.T, w io.Writer) error {
+					return nil
+				}}
+			},
+			client: &http.Client{
+				Transport: testRoundTrip(func(*http.Request) (*http.Response, error) {
+					return nil, errors.New("request error")
+				}),
+			},
+			expectedError: &url.Error{
+				Op:  "Post",
+				URL: "/?SummarizeErrors=false",
+				Err: errors.New("request error"),
+			},
+		},
+		testcase{
+			name: "ok",
+			enc: func(t *testing.T) Encoder {
+				return &testEncoder{t, func(t *testing.T, w io.Writer) error {
+					return nil
+				}}
+			},
+			client: &http.Client{
+				Transport: testRoundTrip(func(*http.Request) (*http.Response, error) {
+					return &http.Response{Body: ioutil.NopCloser(bytes.NewReader([]byte("")))}, nil
+				}),
+			},
+			expectedError: nil,
+		},
+	}
+	for _, tc := range tt {
+		t.Run(tc.name, func(t *testing.T) {
+			client := &Client{authorizer: new(testAuthorizer), client: tc.client}
+			err := client.doEncode(http.MethodPost, "/", tc.enc(t))
+			assert.Equal(t, tc.expectedError, err, "%s", err)
+		})
+	}
+}

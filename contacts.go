@@ -4,11 +4,13 @@ import (
 	"fmt"
 	"io"
 	"net/url"
-	"path"
 )
 
 // Contacts API Root
 const apiContactsRoot = "/Contacts"
+
+// The Xero Contacts endpoint
+var ContactsEndpoint = Endpoint(apiContactsRoot)
 
 // The ContactTrackingCategory for SalesTrackingCategories and PurchasesTrackingCategories
 type ContactTrackingCategory struct {
@@ -185,9 +187,21 @@ type Contact struct {
 	HasAttachments              bool                      `xml:"HasAttachments,omitempty"`
 }
 
+func (c Contact) Encode(dst io.Writer) error {
+	return encode(dst, &c)
+}
+
+type Contacts struct {
+	Contacts []Contact `xml:"Contacts>Contact"`
+}
+
+func (c Contacts) Encode(dst io.Writer) error {
+	return encode(dst, &c)
+}
+
 type ContactsResponse struct {
 	Response
-	Contacts []Contact `xml:"Contacts>Contact"`
+	Contacts
 }
 
 // The ContactIterator type allows for recursive paginated calls
@@ -215,11 +229,11 @@ func (c ContactIterator) Next() (ContactIterator, []Contact, error) {
 	if err := c.getter.get(c.url(), &dst); err != nil {
 		return c, nil, err
 	}
-	if len(dst.Contacts) == 0 {
+	if len(dst.Contacts.Contacts) == 0 {
 		return c, nil, io.EOF
 	}
 	c.page += 1
-	return c, dst.Contacts, nil
+	return c, dst.Contacts.Contacts, nil
 }
 
 // Contact returns a specific singular contact from the Xero API
@@ -228,14 +242,14 @@ func (c ContactIterator) Next() (ContactIterator, []Contact, error) {
 func (c *Client) Contact(identifier string) (Contact, error) {
 	var dst ContactsResponse
 	var contact Contact
-	urlStr := c.url(path.Join(apiContactsRoot, identifier)).String()
+	urlStr := c.url(ContactsEndpoint, identifier).String()
 	if err := c.get(urlStr, &dst); err != nil {
 		return contact, err
 	}
-	if len(dst.Contacts) == 0 {
+	if len(dst.Contacts.Contacts) == 0 {
 		return contact, fmt.Errorf("contact %s not found", identifier)
 	}
-	contact = dst.Contacts[0]
+	contact = dst.Contacts.Contacts[0]
 	return contact, nil
 }
 
@@ -246,7 +260,7 @@ func (c *Client) Contacts() (ContactIterator, []Contact, error) {
 	return ContactIterator{
 		page:   1,
 		getter: c,
-		root:   c.url(apiContactsRoot), // htttps://api.xero.com/api.xro/2.0/Contacts
+		root:   c.url(ContactsEndpoint), // htttps://api.xero.com/api.xro/2.0/Contacts
 	}.Next()
 }
 
