@@ -3,7 +3,9 @@ package xero
 import (
 	"bytes"
 	"encoding/xml"
+	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 	"path"
@@ -57,6 +59,43 @@ type Response struct {
 	DateTimeUTC  time.Time `xml:"DateTimeUTC"`
 }
 
+// An APIException is returned when the API errors
+//   <ApiException>
+//     <ErrorNumber>10</ErrorNumber>
+//     <Type>ValidationException</Type>
+//     <Message>A validation exception occurred</Message>
+//     <Elements>
+//       <DataContractBase xsi:type="Invoice">
+//         <ValidationErrors>
+//           <ValidationError>
+//             <Message>Email address must be valid.</Message>
+//           </ValidationError>
+//         </ValidationErrors>
+//      </DataContractBase>
+//     </Elements>
+//   </ApiException>
+type APIException struct {
+	ErrorNumber int                `xml:"ErrorNumber"`
+	Type        string             `xml:"Type"`
+	Message     string             `xml:"Message"`
+	Elements    []DataContractBase `xml:"Elements>DataContractBase"`
+}
+
+// Error returns the string representation of the Error
+func (e APIException) Error() string {
+	return fmt.Sprintf(
+		"Xero API Exception: [%d] %s",
+		e.ErrorNumber,
+		e.Message)
+}
+
+// DataContactBase holds the type the API exception was for
+// and any ValidationError's that occured that need to be corrected
+type DataContractBase struct {
+	Type             string            `xml:"type,attr"`
+	ValidationErrors []ValidationError `xml:"ValidationErrors>ValidationError"`
+}
+
 // A Client is a Xero API client. It provides methods for calling Xero API endpoints.
 // This type should be constructed with the New() method.
 type Client struct {
@@ -104,7 +143,11 @@ func (c *Client) do(method, urlStr string, body io.Reader) (*http.Response, erro
 	if client == nil {
 		client = http.DefaultClient
 	}
-	return client.Do(req)
+	rsp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	return checkResponse(rsp)
 }
 
 // doDecode performs a HTTP request to the Xero API and automatically decodes
@@ -192,4 +235,36 @@ func (c *Client) Create(ep Endpoint, enc Encoder, dst interface{}) error {
 // into XML and decoding the response XML into the destination interface
 func (c *Client) CreateUpdate(ep Endpoint, enc Encoder, dst interface{}) error {
 	return c.post(c.url(ep).String(), enc, dst)
+}
+
+// checkResponse handles checking the response status code, if the status code
+// is not 200 OK then an error is assumed and processed
+// See: https://developer.xero.com/documentation/api/http-response-codes
+func checkResponse(r *http.Response) (*http.Response, error) {
+	// 200 == an OK response, return the response and no error
+	if r.StatusCode == http.StatusOK {
+		return r, nil
+	}
+	defer r.Body.Close()
+	b, err := ioutil.ReadAll(r.Body) // Read the body, it won't always be XML
+	if err != nil {
+		return nil, err
+	}
+	switch r.StatusCode {
+	case http.StatusBadRequest:
+		exc := APIException{}
+		dec := xml.NewDecoder(bytes.NewReader(b))
+		if err := dec.Decode(&exc); err != nil {
+			return nil, err
+		}
+		return nil, exc
+	default:
+		return nil, fmt.Errorf(
+			"%d: %s (%s: %d) %s",
+			r.StatusCode,
+			http.StatusText(r.StatusCode),
+			r.Request.Method,
+			r.Request.URL.Path,
+			b)
+	}
 }

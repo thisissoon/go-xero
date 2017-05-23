@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/xml"
 	"errors"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -170,7 +171,8 @@ func TestClient_doDecode(t *testing.T) {
 				Transport: testRoundTrip(func(*http.Request) (*http.Response, error) {
 					r := bytes.NewBuffer([]byte("</uwotm8>"))
 					return &http.Response{
-						Body: ioutil.NopCloser(r),
+						StatusCode: http.StatusOK,
+						Body:       ioutil.NopCloser(r),
 					}, nil
 				}),
 			},
@@ -184,7 +186,8 @@ func TestClient_doDecode(t *testing.T) {
 				Transport: testRoundTrip(func(*http.Request) (*http.Response, error) {
 					r := bytes.NewBuffer([]byte(`<Response><ProviderName>Foo</ProviderName></Response>`))
 					return &http.Response{
-						Body: ioutil.NopCloser(r),
+						StatusCode: http.StatusOK,
+						Body:       ioutil.NopCloser(r),
 					}, nil
 				}),
 			},
@@ -246,7 +249,10 @@ func TestClient_doEncode(t *testing.T) {
 			},
 			client: &http.Client{
 				Transport: testRoundTrip(func(*http.Request) (*http.Response, error) {
-					return &http.Response{Body: ioutil.NopCloser(bytes.NewReader([]byte("")))}, nil
+					return &http.Response{
+						StatusCode: http.StatusOK,
+						Body:       ioutil.NopCloser(bytes.NewReader([]byte(""))),
+					}, nil
 				}),
 			},
 			expectedError: nil,
@@ -257,6 +263,90 @@ func TestClient_doEncode(t *testing.T) {
 			client := &Client{authorizer: new(testAuthorizer), client: tc.client}
 			err := client.doEncode(http.MethodPost, "/", tc.enc(t))
 			assert.Equal(t, tc.expectedError, err, "%s", err)
+		})
+	}
+}
+
+func TestCheckResponse(t *testing.T) {
+	type testcase struct {
+		tname            string
+		rsp              *http.Response
+		expectedError    error
+		expectedResponse *http.Response
+	}
+	tt := []testcase{
+		{
+			tname: "200 OK",
+			rsp: &http.Response{
+				StatusCode: http.StatusOK,
+			},
+			expectedError: nil,
+			expectedResponse: &http.Response{
+				StatusCode: http.StatusOK,
+			},
+		},
+		{
+			tname: "400 Bad Request",
+			rsp: &http.Response{
+				StatusCode: http.StatusBadRequest,
+				Body: ioutil.NopCloser(bytes.NewReader([]byte(`
+					<ApiException>
+						<ErrorNumber>10</ErrorNumber>
+						<Type>ValidationException</Type>
+						<Message>A validation exception occurred</Message>
+						<Elements>
+							<DataContractBase xsi:type="Invoice">
+								<ValidationErrors>
+								<ValidationError>
+									<Message>Email address must be valid.</Message>
+								</ValidationError>
+							  </ValidationErrors>
+						   </DataContractBase>
+						</Elements>
+					</ApiException>`))),
+			},
+			expectedError: APIException{
+				ErrorNumber: 10,
+				Type:        "ValidationException",
+				Message:     "A validation exception occurred",
+				Elements: []DataContractBase{
+					{
+						Type: "Invoice",
+						ValidationErrors: []ValidationError{
+							{
+								Message: "Email address must be valid.",
+							},
+						},
+					},
+				},
+			},
+			expectedResponse: nil,
+		},
+		{
+			tname: "503",
+			rsp: &http.Response{
+				StatusCode: http.StatusServiceUnavailable,
+				Body:       ioutil.NopCloser(bytes.NewReader([]byte("The Organisation is offline"))),
+				Request: &http.Request{
+					Method: http.MethodGet,
+					URL:    &url.URL{Path: "/foo"},
+				},
+			},
+			expectedError: fmt.Errorf(
+				"%d: %s (%s: %d) %s",
+				http.StatusServiceUnavailable,
+				http.StatusText(http.StatusServiceUnavailable),
+				http.MethodGet,
+				"/foo",
+				[]byte("The Organisation is offline")),
+			expectedResponse: nil,
+		},
+	}
+	for _, tc := range tt {
+		t.Run(tc.tname, func(t *testing.T) {
+			rsp, err := checkResponse(tc.rsp)
+			assert.Equal(t, tc.expectedResponse, rsp)
+			assert.Equal(t, tc.expectedError, err)
 		})
 	}
 }
