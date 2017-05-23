@@ -3,6 +3,7 @@ package xero
 import (
 	"bytes"
 	"encoding/xml"
+	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -55,6 +56,55 @@ type Response struct {
 	Status       string    `xml:"Status"`
 	ProviderName string    `xml:"ProviderName"`
 	DateTimeUTC  time.Time `xml:"DateTimeUTC"`
+}
+
+// An Exceotion is returned by the API for none 200 responses
+// This may contain extra information about the error such as in a 400
+// bad request, others may not contain any other information
+// This type stores the origional HTTP request and response status code
+// as well as the API exception returned by Xero
+type Error struct {
+	Status       int
+	Request      *http.Request
+	APIException APIException
+}
+
+// Error returns the string representation of the Error
+func (e Error) Error() string {
+	return fmt.Sprintf(
+		"Xero API Exception: [%d] %d: %s",
+		e.Status,
+		e.APIException.ErrorNumber,
+		e.APIException.Message)
+}
+
+// An APIException is returned when the API errors
+//   <ApiException>
+//     <ErrorNumber>10</ErrorNumber>
+//     <Type>ValidationException</Type>
+//     <Message>A validation exception occurred</Message>
+//     <Elements>
+//       <DataContractBase xsi:type="Invoice">
+//         <ValidationErrors>
+//           <ValidationError>
+//             <Message>Email address must be valid.</Message>
+//           </ValidationError>
+//         </ValidationErrors>
+//      </DataContractBase>
+//     </Elements>
+//   </ApiException>
+type APIException struct {
+	ErrorNumber      int              `xml:"ErrorNumber"`
+	Type             string           `xml:"Type"`
+	Message          string           `xml:"Message"`
+	DataContractBase DataContractBase `xml:"DataContractBase"`
+}
+
+// DataContactBase holds the type the API exception was for
+// and any ValidationError's that occured that need to be corrected
+type DataContractBase struct {
+	Type             string            `xml:"xsi:type,attr"`
+	ValidationErrors []ValidationError `xml:"ValidationErrors>ValidationError,omitempty"`
 }
 
 // A Client is a Xero API client. It provides methods for calling Xero API endpoints.
