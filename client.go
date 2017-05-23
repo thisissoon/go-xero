@@ -75,10 +75,10 @@ type Response struct {
 //     </Elements>
 //   </ApiException>
 type APIException struct {
-	ErrorNumber      int              `xml:"ErrorNumber"`
-	Type             string           `xml:"Type"`
-	Message          string           `xml:"Message"`
-	DataContractBase DataContractBase `xml:"DataContractBase"`
+	ErrorNumber int                `xml:"ErrorNumber"`
+	Type        string             `xml:"Type"`
+	Message     string             `xml:"Message"`
+	Elements    []DataContractBase `xml:"Elements>DataContractBase"`
 }
 
 // Error returns the string representation of the Error
@@ -92,7 +92,7 @@ func (e APIException) Error() string {
 // DataContactBase holds the type the API exception was for
 // and any ValidationError's that occured that need to be corrected
 type DataContractBase struct {
-	Type             string            `xml:"xsi:type,attr"`
+	Type             string            `xml:"type,attr"`
 	ValidationErrors []ValidationError `xml:"ValidationErrors>ValidationError"`
 }
 
