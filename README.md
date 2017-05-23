@@ -55,12 +55,12 @@ func main() {
   - [ ] `POST`
   - [ ] `PUT`
 - [ ] Accounts (@jamesjwarren)
-  - [ ] `GET`
+  - [x] `GET`
   - [ ] `POST`
   - [ ] `PUT`
   - [ ] `DELETE`
-- [ ] Bank Transactions
-  - [ ] `GET`
+- [ ] Bank Transactions (@jamesjwarren)
+  - [x] `GET`
   - [ ] `POST`
   - [ ] `PUT`
 - [ ] Bank Transfer
