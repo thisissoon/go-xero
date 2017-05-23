@@ -170,7 +170,8 @@ func TestClient_doDecode(t *testing.T) {
 				Transport: testRoundTrip(func(*http.Request) (*http.Response, error) {
 					r := bytes.NewBuffer([]byte("</uwotm8>"))
 					return &http.Response{
-						Body: ioutil.NopCloser(r),
+						StatusCode: http.StatusOK,
+						Body:       ioutil.NopCloser(r),
 					}, nil
 				}),
 			},
@@ -184,7 +185,8 @@ func TestClient_doDecode(t *testing.T) {
 				Transport: testRoundTrip(func(*http.Request) (*http.Response, error) {
 					r := bytes.NewBuffer([]byte(`<Response><ProviderName>Foo</ProviderName></Response>`))
 					return &http.Response{
-						Body: ioutil.NopCloser(r),
+						StatusCode: http.StatusOK,
+						Body:       ioutil.NopCloser(r),
 					}, nil
 				}),
 			},
@@ -246,7 +248,10 @@ func TestClient_doEncode(t *testing.T) {
 			},
 			client: &http.Client{
 				Transport: testRoundTrip(func(*http.Request) (*http.Response, error) {
-					return &http.Response{Body: ioutil.NopCloser(bytes.NewReader([]byte("")))}, nil
+					return &http.Response{
+						StatusCode: http.StatusOK,
+						Body:       ioutil.NopCloser(bytes.NewReader([]byte(""))),
+					}, nil
 				}),
 			},
 			expectedError: nil,
