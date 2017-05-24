@@ -110,7 +110,7 @@ type Client struct {
 // url constructs a valid Xero API url. The scheme, host and api root are
 // automatically appended to the url path
 func (c *Client) url(endpoint Endpoint, extra ...string) *url.URL {
-	parts := append([]string{endpoint.String()}, extra...)
+	parts := append([]string{c.root, endpoint.String()}, extra...)
 	return &url.URL{
 		Scheme: c.scheme,
 		Host:   c.host,
@@ -258,9 +258,15 @@ func checkResponse(r *http.Response) (*http.Response, error) {
 			return nil, err
 		}
 		return nil, exc
+	case http.StatusUnauthorized:
+		q, err := url.ParseQuery(string(b))
+		if err != nil {
+			return nil, err
+		}
+		return nil, fmt.Errorf(q.Get("oauth_problem_advice"))
 	default:
 		return nil, fmt.Errorf(
-			"%d: %s (%s: %d) %s",
+			"%d: %s (%s: %s) %s",
 			r.StatusCode,
 			http.StatusText(r.StatusCode),
 			r.Request.Method,
