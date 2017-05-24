@@ -333,7 +333,7 @@ func TestCheckResponse(t *testing.T) {
 				},
 			},
 			expectedError: fmt.Errorf(
-				"%d: %s (%s: %d) %s",
+				"%d: %s (%s: %s) %s",
 				http.StatusServiceUnavailable,
 				http.StatusText(http.StatusServiceUnavailable),
 				http.MethodGet,
