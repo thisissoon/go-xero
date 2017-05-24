@@ -55,10 +55,10 @@ func main() {
 - [ ] Accounts (@jamesjwarren)
   - [x] `GET`
   - [ ] `DELETE`
-- [ ] Bank Transactions (@jamesjwarren)
+- [x] Bank Transactions (@jamesjwarren)
   - [x] `GET`
-- [ ] Bank Transfer
-  - [ ] `GET`
+- [x] Bank Transfer (@jamesjwarren)
+  - [x] `GET`
 - [ ] Branding Themes
   - [ ] `GET`
 - [ ] Contacts (@krak3n)
