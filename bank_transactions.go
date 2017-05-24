@@ -152,6 +152,7 @@ func (c *Client) BankTransactions() (BankTransactionIterator, []BankTransaction,
 type BankAccount struct {
 	Code      string `xml:"Code,omitempty"`
 	AccountID string `xml:"AccountID,omitempty"`
+	Name      string `xml:"Name,omitempty"`
 }
 
 // The LineItem type represents a single line item in Xero
