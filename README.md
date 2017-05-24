@@ -53,10 +53,10 @@ func main() {
 - [ ] Attchments
   - [ ] `GET`
 - [ ] Accounts (@jamesjwarren)
-  - [ ] `GET`
+  - [x] `GET`
   - [ ] `DELETE`
-- [ ] Bank Transactions
-  - [ ] `GET`
+- [ ] Bank Transactions (@jamesjwarren)
+  - [x] `GET`
 - [ ] Bank Transfer
   - [ ] `GET`
 - [ ] Branding Themes
